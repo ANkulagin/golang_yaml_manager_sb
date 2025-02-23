@@ -151,6 +151,15 @@ closed:false
 
 func TestNote_UpdateFrontMatter_Success(t *testing.T) {
 	sut := &Note{}
+	sut.Content = `
+---
+title:  test
+source1: 
+author: ANkulagin
+closed: false
+---
+anything
+`
 
 	testCases := []struct {
 		name        string
@@ -172,6 +181,7 @@ source1:
 author: ANkulagin
 closed: false
 ---
+anything
 `,
 		},
 	}
@@ -181,14 +191,6 @@ closed: false
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			sut.FrontMatter = tc.frontMatter
-			sut.Content = `
----
-title:  test
-source1: 
-author: ANkulagin
-closed: false
----
-`
 
 			err := sut.UpdateFrontMatter()
 			require.NoError(t, err)
