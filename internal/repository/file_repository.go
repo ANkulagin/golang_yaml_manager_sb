@@ -12,7 +12,7 @@ type FileRepository interface {
 
 type fileRepository struct{}
 
-func NewFileRepository() *fileRepository {
+func NewFileRepository() FileRepository {
 	return &fileRepository{}
 }
 
