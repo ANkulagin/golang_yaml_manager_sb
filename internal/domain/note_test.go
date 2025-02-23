@@ -117,7 +117,7 @@ func TestNote_LoadFrontMatter_Error(t *testing.T) {
 			expectedErrMsg: "incorrectly format front matter",
 		},
 		{
-			name: "forgot to close",
+			name: "incorrectly format front matter",
 			content: `
 ---
 title:  wating
@@ -143,6 +143,82 @@ closed:false
 			sut.Content = tc.content
 
 			err := sut.LoadFrontMatter()
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErrMsg)
+		})
+	}
+}
+
+func TestNote_UpdateFrontMatter_Success(t *testing.T) {
+	sut := &Note{}
+
+	testCases := []struct {
+		name        string
+		frontMatter map[string]any
+		expected    string
+	}{
+		{
+			name: "success",
+			frontMatter: map[string]any{
+				"title":   "wating",
+				"source1": nil,
+				"author":  "ANkulagin",
+				"closed":  false,
+			},
+			expected: `
+---
+title:  wating
+source1:
+author: ANkulagin
+closed: false
+---
+`,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			sut.FrontMatter = tc.frontMatter
+			sut.Content = `
+---
+title:  test
+source1: 
+author: ANkulagin
+closed: false
+---
+`
+
+			err := sut.UpdateFrontMatter()
+			require.NoError(t, err)
+			require.YAMLEq(t, tc.expected, sut.Content)
+		})
+	}
+}
+
+func TestNote_UpdateFrontMatter_Error(t *testing.T) {
+	sut := &Note{}
+
+	testCases := []struct {
+		name           string
+		content        string
+		expectedErrMsg string
+	}{
+		{
+			name:           "forgot to close",
+			content:        "\n---\nclose:false\n forgot to close",
+			expectedErrMsg: "incorrectly format front matter",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			sut.Content = tc.content
+
+			err := sut.UpdateFrontMatter()
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErrMsg)
 		})

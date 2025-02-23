@@ -30,3 +30,16 @@ func (n *Note) LoadFrontMatter() error {
 	}
 	return nil
 }
+
+func (n *Note) UpdateFrontMatter() error {
+	data, err := yaml.Marshal(n.FrontMatter)
+	if err != nil {
+		return err
+	}
+	parts := strings.SplitN(n.Content, "---", 3)
+	if len(parts) < 3 {
+		return errors.New("incorrectly format front matter")
+	}
+	n.Content = "---\n" + string(data) + "---" + parts[2]
+	return nil
+}
