@@ -2,6 +2,8 @@ package repository
 
 import "os"
 
+//go:generate mockery --case=underscore --dir=. --name=FileRepository --output=../../mocks/repository
+
 type FileRepository interface {
 	ReadFile(path string) (string, error)
 	WriteFile(path, content string) error
@@ -10,7 +12,7 @@ type FileRepository interface {
 
 type fileRepository struct{}
 
-func NewFileRepository() FileRepository {
+func NewFileRepository() *fileRepository {
 	return &fileRepository{}
 }
 
