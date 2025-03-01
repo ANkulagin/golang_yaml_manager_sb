@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/app"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/config"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/repository"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/service"
-	"github.com/ANkulagin/golang_yaml_manager_sb/pkg/logger"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/application"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/service"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/config"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/logger"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/repository"
 	"log"
 )
 
@@ -23,7 +23,7 @@ func main() {
 	fr := repository.NewFileRepository()
 	ns := service.NewsNoteService()
 
-	p := app.NewProcessor(cfg, fr, ns, initLogger)
+	p := application.NewProcessor(cfg, fr, ns, initLogger)
 
 	if err := p.Process(); err != nil {
 		initLogger.Error("error: ", err)

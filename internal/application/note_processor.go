@@ -1,10 +1,10 @@
-package app
+package application
 
 import (
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/config"
 	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/repository"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/service"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/service"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/config"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -14,7 +14,7 @@ import (
 
 type Processor struct {
 	Config      *config.Config
-	FileRep     repository.FileRepository
+	FileRep     domain.FileRepository
 	NoteService service.NoteService
 	Logger      *logrus.Logger
 	sem         chan struct{}
@@ -22,7 +22,7 @@ type Processor struct {
 
 func NewProcessor(
 	cfg *config.Config,
-	fr repository.FileRepository,
+	fr domain.FileRepository,
 	ns service.NoteService,
 	logger *logrus.Logger,
 ) *Processor {
@@ -89,7 +89,7 @@ func (p *Processor) processFile(filePath string) {
 		return
 	}
 
-	note := &domain.Note{
+	note := &entity.Note{
 		FilePath:    filePath,
 		Content:     content,
 		FrontMatter: make(map[string]any),

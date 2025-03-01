@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -75,7 +75,7 @@ anything
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			note := &domain.Note{}
+			note := &entity.Note{}
 			sut := NewsNoteService()
 			note.FrontMatter = tc.frontMatter
 			note.Content = tc.content
@@ -110,7 +110,7 @@ closed: false
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			note := &domain.Note{
+			note := &entity.Note{
 				FrontMatter: make(map[string]any),
 				Content:     tc.content,
 			}

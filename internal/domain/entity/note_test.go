@@ -1,4 +1,4 @@
-package domain
+package entity
 
 import (
 	"github.com/stretchr/testify/require"

@@ -1,18 +1,13 @@
 package repository
 
-import "os"
-
-//go:generate mockery --case=underscore --dir=. --name=FileRepository --output=../../mocks/repository
-
-type FileRepository interface {
-	ReadFile(path string) (string, error)
-	WriteFile(path, content string) error
-	AppendToFile(path, content string) error
-}
+import (
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
+	"os"
+)
 
 type fileRepository struct{}
 
-func NewFileRepository() FileRepository {
+func NewFileRepository() domain.FileRepository {
 	return &fileRepository{}
 }
 

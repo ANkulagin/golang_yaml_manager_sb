@@ -1,14 +1,14 @@
-package app
+package application
 
 import (
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/config"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/logger"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/config"
 	mocksRepo "github.com/ANkulagin/golang_yaml_manager_sb/mocks/repository"
 	mocksService "github.com/ANkulagin/golang_yaml_manager_sb/mocks/service"
-	"github.com/ANkulagin/golang_yaml_manager_sb/pkg/logger"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +58,7 @@ content3`
 	fileRepoMock.On("ReadFile", file3).Return(content3, nil)
 
 	noteServiceMock.
-		On("ValidateAndUpdate", mock.AnythingOfType("*domain.Note")).
+		On("ValidateAndUpdate", mock.AnythingOfType("*entity.Note")).
 		Return(true, nil).Twice()
 
 	fileRepoMock.

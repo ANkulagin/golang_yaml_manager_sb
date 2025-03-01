@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	domain "github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
+	entity "github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,7 +13,7 @@ type NoteService struct {
 }
 
 // ValidateAndUpdate provides a mock function with given fields: note
-func (_m *NoteService) ValidateAndUpdate(note *domain.Note) (bool, error) {
+func (_m *NoteService) ValidateAndUpdate(note *entity.Note) (bool, error) {
 	ret := _m.Called(note)
 
 	if len(ret) == 0 {
@@ -22,16 +22,16 @@ func (_m *NoteService) ValidateAndUpdate(note *domain.Note) (bool, error) {
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*domain.Note) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(*entity.Note) (bool, error)); ok {
 		return rf(note)
 	}
-	if rf, ok := ret.Get(0).(func(*domain.Note) bool); ok {
+	if rf, ok := ret.Get(0).(func(*entity.Note) bool); ok {
 		r0 = rf(note)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(*domain.Note) error); ok {
+	if rf, ok := ret.Get(1).(func(*entity.Note) error); ok {
 		r1 = rf(note)
 	} else {
 		r1 = ret.Error(1)
