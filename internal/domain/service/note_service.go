@@ -7,7 +7,7 @@ import (
 //go:generate mockery --case=underscore --dir=. --name=NoteService --output=../../../mocks/service
 
 type NoteService interface {
-	ValidateAndUpdate(note *entity.Note) (bool, error)
+	ValidateAndUpsert(note *entity.Note) (bool, error)
 }
 
 type noteService struct{}
@@ -16,9 +16,9 @@ func NewsNoteService() NoteService {
 	return &noteService{}
 }
 
-// ValidateAndUpdate проверяет наличие поля 'closed' и обновляет YAML-шапку при необходимости.
+// ValidateAndUpsert проверяет наличие поля 'closed' и обновляет YAML-шапку при необходимости.
 // Возвращает true, если заметку следует добавить в отчёт.
-func (ns *noteService) ValidateAndUpdate(note *entity.Note) (bool, error) {
+func (ns *noteService) ValidateAndUpsert(note *entity.Note) (bool, error) {
 	closedVal, exists := note.FrontMatter["closed"]
 	if exists {
 		if closed, ok := closedVal.(bool); ok && closed {

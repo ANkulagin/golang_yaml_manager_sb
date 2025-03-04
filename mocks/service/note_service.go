@@ -12,12 +12,12 @@ type NoteService struct {
 	mock.Mock
 }
 
-// ValidateAndUpdate provides a mock function with given fields: note
-func (_m *NoteService) ValidateAndUpdate(note *entity.Note) (bool, error) {
+// ValidateAndUpsert provides a mock function with given fields: note
+func (_m *NoteService) ValidateAndUpsert(note *entity.Note) (bool, error) {
 	ret := _m.Called(note)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ValidateAndUpdate")
+		panic("no return value specified for ValidateAndUpsert")
 	}
 
 	var r0 bool

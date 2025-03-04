@@ -19,6 +19,8 @@ test: ## Run unit tests with verbose output
 	@echo "Running tests..."
 	go test $(PKG) -v
 
+clear-cache-tests: ## Clear cache tests
+	go clean -testcache
 
 coverage: ## Generate code coverage report (HTML)
 	@echo "Running tests with coverage..."

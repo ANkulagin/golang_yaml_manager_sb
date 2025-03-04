@@ -16,7 +16,7 @@ func TestFileRepository_ReadFile(t *testing.T) {
 	err = os.WriteFile(tempFile.Name(), []byte(content), os.ModePerm)
 	require.NoError(t, err)
 
-	result, err := fileRepo.ReadFile(tempFile.Name())
+	result, err := fileRepo.GetFileContent(tempFile.Name())
 	require.NoError(t, err)
 	require.Equal(t, content, result)
 }
@@ -28,7 +28,7 @@ func TestFileRepository_WriteFile(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 
 	content := "Write this to file"
-	err = fileRepo.WriteFile(tempFile.Name(), content)
+	err = fileRepo.UpdateFileContent(tempFile.Name(), content)
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(tempFile.Name())
@@ -46,7 +46,7 @@ func TestFileRepository_AppendToFile(t *testing.T) {
 	appendContent := "Appended content"
 	err = os.WriteFile(tempFile.Name(), []byte(initialContent), os.ModePerm)
 	require.NoError(t, err)
-	err = fileRepo.AppendToFile(tempFile.Name(), appendContent)
+	err = fileRepo.AddLineToFile(tempFile.Name(), appendContent)
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(tempFile.Name())

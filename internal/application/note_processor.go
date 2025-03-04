@@ -1,52 +1,67 @@
 package application
 
 import (
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/service"
-	"github.com/ANkulagin/golang_yaml_manager_sb/internal/infrastructure/config"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
+	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/service"
 )
 
-type Processor struct {
-	Config      *config.Config
-	FileRep     domain.FileRepository
-	NoteService service.NoteService
+type NoteProcessor struct {
+	SrcDir           string
+	TemplatePath     string
+	ReportPath       string
+	SkipPatterns     []string
+	ConcurrencyLimit int
+
 	Logger      *logrus.Logger
-	sem         chan struct{}
+	NoteRepo    domain.NoteRepository
+	NoteService service.NoteService
+
+	sem chan struct{}
 }
 
-func NewProcessor(
-	cfg *config.Config,
-	fr domain.FileRepository,
-	ns service.NoteService,
+func NewNoteProcessor(
+	srcDir, templatePath, reportPath string,
+	skipPatterns []string,
+	concurrencyLimit int,
 	logger *logrus.Logger,
-) *Processor {
-	return &Processor{
-		Config:      cfg,
-		FileRep:     fr,
-		NoteService: ns,
-		Logger:      logger,
-		sem:         make(chan struct{}, cfg.ConcurrencyLimit),
+	noteRepo domain.NoteRepository,
+	noteService service.NoteService,
+) *NoteProcessor {
+	return &NoteProcessor{
+		SrcDir:           srcDir,
+		TemplatePath:     templatePath,
+		ReportPath:       reportPath,
+		SkipPatterns:     skipPatterns,
+		ConcurrencyLimit: concurrencyLimit,
+		Logger:           logger,
+		NoteRepo:         noteRepo,
+		NoteService:      noteService,
+		sem:              make(chan struct{}, concurrencyLimit),
 	}
 }
 
-func (p *Processor) Process() error {
+func (p *NoteProcessor) Execute() error {
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
-		_ = p.processDirectory(p.Config.SrcDir, &wg)
+		_ = p.handleDirectory(p.SrcDir, &wg)
 	}()
+
 	wg.Wait()
 	return nil
 }
 
-func (p *Processor) processDirectory(dirPath string, wg *sync.WaitGroup) error {
+func (p *NoteProcessor) handleDirectory(dirPath string, wg *sync.WaitGroup) error {
 	p.sem <- struct{}{}
 	defer func() { <-p.sem }()
 
@@ -55,25 +70,26 @@ func (p *Processor) processDirectory(dirPath string, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	for _, file := range files {
-		if file.IsDir() && p.shouldSkipDirectory(file.Name()) {
+	for _, f := range files {
+		if f.IsDir() && p.checkSkipDirectory(f.Name()) {
 			continue
 		}
 
-		fullPath := filepath.Join(dirPath, file.Name())
-
-		if file.IsDir() {
+		fullPath := filepath.Join(dirPath, f.Name())
+		if f.IsDir() {
 			wg.Add(1)
 			go func(path string) {
 				defer wg.Done()
-				_ = p.processDirectory(path, wg)
+				_ = p.handleDirectory(path, wg)
 			}(fullPath)
 		} else {
-			if strings.HasSuffix(file.Name(), ".md") {
+			if strings.HasSuffix(f.Name(), ".md") {
 				wg.Add(1)
 				go func(path string) {
 					defer wg.Done()
-					p.processFile(path)
+					if err := p.handleFile(path); err != nil {
+						p.Logger.Errorf("error handling file %s: %v", path, err)
+					}
 				}(fullPath)
 			}
 		}
@@ -81,12 +97,12 @@ func (p *Processor) processDirectory(dirPath string, wg *sync.WaitGroup) error {
 	return nil
 }
 
-func (p *Processor) processFile(filePath string) {
-	p.Logger.Info("file processing" + filePath)
-	content, err := p.FileRep.ReadFile(filePath)
+func (p *NoteProcessor) handleFile(filePath string) error {
+	p.Logger.Infof("handling file: %s", filePath)
+
+	content, err := p.NoteRepo.GetFileContent(filePath)
 	if err != nil {
-		p.Logger.Error("file reading error " + filePath + ": " + err.Error())
-		return
+		return err
 	}
 
 	note := &entity.Note{
@@ -95,49 +111,40 @@ func (p *Processor) processFile(filePath string) {
 		FrontMatter: make(map[string]any),
 	}
 
-	if note.HasYaml() {
-		if err := note.LoadFrontMatter(); err != nil {
-			p.Logger.Error("parsing yaml in file error " + filePath + ": " + err.Error())
-			return
-		}
-
-		record, err := p.NoteService.ValidateAndUpdate(note)
+	if !note.CheckHasYaml() {
+		tpl, err := p.NoteRepo.GetFileContent(p.TemplatePath)
 		if err != nil {
-			p.Logger.Error("file validation error " + filePath + ": " + err.Error())
-			return
+			return err
 		}
-		if record {
-			// Генерируем ссылку в формате [[<название файла без расширения>]]
-			title := strings.TrimSuffix(filepath.Base(filePath), ".md")
-			link := "[[" + title + "]]"
-			if err := p.FileRep.AppendToFile(p.Config.ReportFile, link); err != nil {
-				p.Logger.Error("Box recording of the report links for file " + filePath + ": " + err.Error())
-			} else {
-				p.Logger.Info("The link is recorded in the report: " + link)
-			}
-		}
-
-		if err := p.FileRep.WriteFile(filePath, note.Content); err != nil {
-			p.Logger.Error("File recording error " + filePath + ": " + err.Error())
-		}
-	} else {
-		templateContent, err := p.FileRep.ReadFile(p.Config.TemplateDir)
-		if err != nil {
-			p.Logger.Error("File reading error: " + err.Error())
-			return
-		}
-		note.Content = templateContent + "\n" + note.Content
-		//todo При вставке шаблона можно также добавить ссылку в отчёт, если требуется
-		if err := p.FileRep.WriteFile(filePath, note.Content); err != nil {
-			p.Logger.Error("File recording error " + filePath + ": " + err.Error())
-		}
+		note.Content = tpl + "\n" + note.Content
+		return p.NoteRepo.UpdateFileContent(filePath, note.Content)
 	}
+
+	if err := note.FillFrontMatter(); err != nil {
+		return err
+	}
+
+	shouldReport, err := p.NoteService.ValidateAndUpsert(note)
+	if err != nil {
+		return err
+	}
+
+	if shouldReport {
+		// Формируем ссылку вида [[filename]]
+		title := strings.TrimSuffix(filepath.Base(filePath), ".md")
+		link := "[[" + title + "]]"
+		if err := p.NoteRepo.AddLineToFile(p.ReportPath, link); err != nil {
+			return err
+		}
+		p.Logger.Infof("added link to report: %s", link)
+	}
+
+	return p.NoteRepo.UpdateFileContent(filePath, note.Content)
 }
 
-// shouldSkipDirectory возвращает true, если имя директории начинается с одного из указанных префиксов.
-func (p *Processor) shouldSkipDirectory(directoryName string) bool {
-	for _, prefix := range p.Config.SkipPatterns {
-		if strings.HasPrefix(directoryName, prefix) {
+func (p *NoteProcessor) checkSkipDirectory(dirname string) bool {
+	for _, prefix := range p.SkipPatterns {
+		if strings.HasPrefix(dirname, prefix) {
 			return true
 		}
 	}

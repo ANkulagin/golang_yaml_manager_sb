@@ -79,7 +79,7 @@ anything
 			sut := NewsNoteService()
 			note.FrontMatter = tc.frontMatter
 			note.Content = tc.content
-			actual, err := sut.ValidateAndUpdate(note)
+			actual, err := sut.ValidateAndUpsert(note)
 			require.NoError(t, err)
 			require.YAMLEq(t, note.Content, tc.content)
 			require.Equal(t, tc.expected, actual)
@@ -115,7 +115,7 @@ closed: false
 				Content:     tc.content,
 			}
 			sut := NewsNoteService()
-			_, err := sut.ValidateAndUpdate(note)
+			_, err := sut.ValidateAndUpsert(note)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErrMsg)
 		})

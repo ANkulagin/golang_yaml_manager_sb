@@ -46,7 +46,7 @@ func TestNote_HasYaml(t *testing.T) {
 			t.Parallel()
 			sut.Content = tc.content
 
-			result := sut.HasYaml()
+			result := sut.CheckHasYaml()
 
 			require.Equal(t, tc.expected, result)
 		})
@@ -86,7 +86,7 @@ closed: false
 			t.Parallel()
 			sut.Content = tc.content
 
-			err := sut.LoadFrontMatter()
+			err := sut.FillFrontMatter()
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, sut.FrontMatter)
 		})
@@ -142,7 +142,7 @@ closed:false
 			t.Parallel()
 			sut.Content = tc.content
 
-			err := sut.LoadFrontMatter()
+			err := sut.FillFrontMatter()
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErrMsg)
 		})

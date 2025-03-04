@@ -1,9 +1,9 @@
 package domain
 
-//go:generate mockery --case=underscore --dir=. --name=FileRepository --output=../../mocks/repository
+//go:generate mockery --case=underscore --dir=. --name=NoteRepository --output=../../mocks/repository
 
-type FileRepository interface {
-	ReadFile(path string) (string, error)
-	WriteFile(path, content string) error
-	AppendToFile(path, content string) error
+type NoteRepository interface {
+	GetFileContent(path string) (string, error)
+	UpdateFileContent(path, content string) error
+	AddLineToFile(path, content string) error
 }

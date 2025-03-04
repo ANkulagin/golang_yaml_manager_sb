@@ -12,13 +12,13 @@ type Note struct {
 	Content     string
 }
 
-func (n *Note) HasYaml() bool {
+func (n *Note) CheckHasYaml() bool {
 	return strings.HasPrefix(strings.TrimLeft(n.Content, "\t\n\r"), "---")
 }
 
 // todo продумать режим где будет просто пропускать сломанный yaml
-func (n *Note) LoadFrontMatter() error {
-	if !n.HasYaml() {
+func (n *Note) FillFrontMatter() error {
+	if !n.CheckHasYaml() {
 		return errors.New("front matter not found")
 	}
 	parts := strings.SplitN(n.Content, "---", 3)
