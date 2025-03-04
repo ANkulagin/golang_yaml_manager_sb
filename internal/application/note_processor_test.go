@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// todo добавлены комменты для пересмотра логики репортов в будущем
 func TestProcessor_Process_Success(t *testing.T) {
 	tDir, err := os.MkdirTemp("", "proc_test")
 	require.NoError(t, err)
@@ -24,13 +25,15 @@ func TestProcessor_Process_Success(t *testing.T) {
 	subDir := filepath.Join(tDir, "subdir")
 	require.NoError(t, os.Mkdir(subDir, 0755))
 
-	file1 := filepath.Join(tDir, "file1.md")
-	file2 := filepath.Join(tDir, "file2.txt")
-	file3 := filepath.Join(subDir, "file3.md")
+	file1 := filepath.Join(tDir, "file1.md")   // есть YAML
+	file2 := filepath.Join(tDir, "file2.txt")  // пропустим
+	file3 := filepath.Join(subDir, "file3.md") // есть YAML
+	file4 := filepath.Join(subDir, "file4.md") // нет YAML
 
 	require.NoError(t, os.WriteFile(file1, []byte("dummy"), 0644))
 	require.NoError(t, os.WriteFile(file2, []byte("dummy"), 0644))
 	require.NoError(t, os.WriteFile(file3, []byte("dummy"), 0644))
+	require.NoError(t, os.WriteFile(file4, []byte("dummy"), 0644))
 
 	fileRepoMock := mocksRepo.NewNoteRepository(t)
 	noteServiceMock := mocksService.NewNoteService(t)
@@ -57,27 +60,32 @@ closed: false
 ---
 content3`
 
+	content4 := `content4`
+
+	// Моки чтения файлов
 	fileRepoMock.On("GetFileContent", file1).Return(content1, nil)
 	fileRepoMock.On("GetFileContent", file3).Return(content3, nil)
+	fileRepoMock.On("GetFileContent", file4).Return(content4, nil)
 
-	noteServiceMock.
-		On("ValidateAndUpsert", mock.AnythingOfType("*entity.Note")).
-		Return(true, nil).Twice()
+	// Когда увидим, что file4 не имеет YAML, код попросит прочитать template.md
+	fileRepoMock.On("GetFileContent", "template.md").Return("TEMPLATE_CONTENT", nil)
 
-	fileRepoMock.
-		On("AddLineToFile", cfg.ReportFile, "[[file1]]").
-		Return(nil)
-	fileRepoMock.
-		On("AddLineToFile", cfg.ReportFile, "[[file3]]").
-		Return(nil)
+	// Для файлов с YAML (file1, file3) — вызывается ValidateAndUpsert => true => AddLineToFile => UpdateFileContent
+	noteServiceMock.On("ValidateAndUpsert", mock.AnythingOfType("*entity.Note")).Return(true, nil).Twice()
 
-	fileRepoMock.
-		On("UpdateFileContent", file1, mock.Anything).
-		Return(nil)
-	fileRepoMock.
-		On("UpdateFileContent", file3, mock.Anything).
-		Return(nil)
+	// => AddLineToFile для file1 и file3
+	fileRepoMock.On("AddLineToFile", cfg.ReportFile, "[[file1]]").Return(nil)
+	fileRepoMock.On("AddLineToFile", cfg.ReportFile, "[[file3]]").Return(nil)
 
+	// => UpdateFileContent для file1 и file3
+	fileRepoMock.On("UpdateFileContent", file1, mock.Anything).Return(nil)
+	fileRepoMock.On("UpdateFileContent", file3, mock.Anything).Return(nil)
+
+	// Для file4 без YAML => только вставляем TEMPLATE_CONTENT + "\n" + content4 => и UpdateFileContent
+	// Не вызываем ValidateAndUpsert или AddLineToFile
+	fileRepoMock.On("UpdateFileContent", file4, mock.Anything).Return(nil)
+
+	// Запуск
 	err = sut.Execute()
 	require.NoError(t, err)
 
