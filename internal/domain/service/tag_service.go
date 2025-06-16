@@ -29,17 +29,14 @@ func (ts *tagService) ExtractTagsFromPath(filePath string, srcDir string) []stri
 	// Разбиваем путь на части
 	parts := strings.Split(dir, string(filepath.Separator))
 
-	// Регулярное выражение для удаления эмодзи
-	emojiRegex := regexp.MustCompile(`[\x{1F600}-\x{1F64F}]|[\x{1F300}-\x{1F5FF}]|[\x{1F680}-\x{1F6FF}]|[\x{1F1E0}-\x{1F1FF}]|[\x{2600}-\x{26FF}]|[\x{2700}-\x{27BF}]`)
-
 	tags := make([]string, 0)
 	for _, part := range parts {
 		if part == "" || part == "." {
 			continue
 		}
 
-		// Удаляем эмодзи
-		cleanPart := emojiRegex.ReplaceAllString(part, "")
+		// Удаляем эмодзи и очищаем строку
+		cleanPart := removeEmojis(part)
 		cleanPart = strings.TrimSpace(cleanPart)
 
 		if cleanPart != "" {
@@ -50,6 +47,36 @@ func (ts *tagService) ExtractTagsFromPath(filePath string, srcDir string) []stri
 	}
 
 	return tags
+}
+
+// removeEmojis удаляет все эмодзи из строки
+func removeEmojis(s string) string {
+	// Создаём новую строку без эмодзи
+	var result strings.Builder
+
+	for _, r := range s {
+		// Проверяем, является ли символ эмодзи
+		if !isEmoji(r) {
+			result.WriteRune(r)
+		}
+	}
+
+	return result.String()
+}
+
+// isEmoji проверяет, является ли руна эмодзи
+func isEmoji(r rune) bool {
+	// Основные блоки эмодзи в Unicode
+	return (r >= 0x1F600 && r <= 0x1F64F) || // Эмоции
+		(r >= 0x1F300 && r <= 0x1F5FF) || // Символы и пиктограммы
+		(r >= 0x1F680 && r <= 0x1F6FF) || // Транспорт и карты
+		(r >= 0x1F1E0 && r <= 0x1F1FF) || // Флаги
+		(r >= 0x2600 && r <= 0x26FF) || // Разные символы
+		(r >= 0x2700 && r <= 0x27BF) || // Дингбаты
+		(r >= 0xFE00 && r <= 0xFE0F) || // Селекторы вариантов
+		(r >= 0x1F900 && r <= 0x1F9FF) || // Дополнительные символы
+		(r >= 0x1FA70 && r <= 0x1FAFF) || // Символы и пиктограммы расширенные
+		(r >= 0xE0000 && r <= 0xE007F) // Теги
 }
 
 func toSnakeCase(s string) string {

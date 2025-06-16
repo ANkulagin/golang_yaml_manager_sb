@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/entity"
+	"strings"
 )
 
 type NoteService interface {
@@ -46,11 +47,23 @@ func (ns *noteService) UpdateTags(note *entity.Note, newTags []string) error {
 		case []interface{}:
 			for _, tag := range v {
 				if strTag, ok := tag.(string); ok {
-					existingTags = append(existingTags, strTag)
+					// Очищаем существующий тег от эмодзи
+					cleanTag := removeEmojis(strTag)
+					cleanTag = strings.TrimSpace(cleanTag)
+					if cleanTag != "" {
+						existingTags = append(existingTags, cleanTag)
+					}
 				}
 			}
 		case []string:
-			existingTags = v
+			for _, tag := range v {
+				// Очищаем существующий тег от эмодзи
+				cleanTag := removeEmojis(tag)
+				cleanTag = strings.TrimSpace(cleanTag)
+				if cleanTag != "" {
+					existingTags = append(existingTags, cleanTag)
+				}
+			}
 		}
 	}
 
