@@ -1,0 +1,34 @@
+# .mockery.yaml
+
+# Глобальная настройка для стиля имен файлов (эквивалент --case=underscore)
+case: underscore
+
+# Включает новый API для тестов вида: mock.EXPECT().MyMethod()...
+# Очень рекомендуется для современных тестов.
+with-expecter: true
+
+# Основная секция, где мы указываем, что именно нужно мокировать.
+packages:
+  # Полный путь к пакету, в котором находится ваш интерфейс.
+  github.com/ANkulagin/golang_yaml_manager_sb/internal/domain/service:
+    # Указываем, какие интерфейсы из этого пакета мы хотим мокировать.
+    interfaces:
+      NoteService: {} # Пустые скобки означают "использовать глобальные настройки"
+
+  # В ваших логах также был виден интерфейс NoteRepository.
+  # Добавим его тоже, чтобы всё было в одном месте.
+  # Предположим, он находится в пакете internal/domain.
+  github.com/ANkulagin/golang_yaml_manager_sb/internal/domain:
+    interfaces:
+      NoteRepository: {}
+
+# Глобальные настройки для сгенерированных файлов.
+# Можно переопределить для каждого пакета отдельно.
+output: "mocks/{{.PackageName}}"
+# ^^^
+# Это шаблон. {{.PackageName}} будет заменен на имя пакета (например, "service" или "domain").
+# В результате моки для NoteService будут в mocks/service/, а для NoteRepository в mocks/domain/.
+# Это очень удобно для организации.
+
+# Имя пакета для сгенерированных моков.
+outpkg: "{{.PackageName}}"
