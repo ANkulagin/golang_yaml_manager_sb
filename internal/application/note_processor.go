@@ -50,13 +50,7 @@ func NewNoteProcessor(
 
 func (p *NoteProcessor) Execute() error {
 	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		_ = p.handleDirectory(p.SrcDir, &wg)
-	}()
-
+	_ = p.handleDirectory(p.SrcDir, &wg)
 	wg.Wait()
 	return nil
 }
