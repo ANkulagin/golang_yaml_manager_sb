@@ -37,3 +37,7 @@ func (fr *fileRepository) AddLineToFile(path, content string) error {
 
 	return nil
 }
+
+func (fr *fileRepository) ClearFile(path string) error {
+	return os.WriteFile(path, []byte(""), 0644)
+}

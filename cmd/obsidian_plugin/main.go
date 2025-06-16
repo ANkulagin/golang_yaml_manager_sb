@@ -20,7 +20,8 @@ func main() {
 	logg.Infof("Level log %s", cfg.LogLevel)
 
 	noteRepo := repository.NewFileRepository()
-	noteSrv := service.NewsNoteService()
+	noteSrv := service.NewNoteService()
+	tagSrv := service.NewTagService()
 
 	processor := application.NewNoteProcessor(
 		cfg.SrcDir,
@@ -31,6 +32,7 @@ func main() {
 		logg,
 		noteRepo,
 		noteSrv,
+		tagSrv,
 	)
 
 	if err := processor.Execute(); err != nil {

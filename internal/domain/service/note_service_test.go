@@ -76,7 +76,7 @@ anything
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			note := &entity.Note{}
-			sut := NewsNoteService()
+			sut := NewNoteService()
 			note.FrontMatter = tc.frontMatter
 			note.Content = tc.content
 			actual, err := sut.ValidateAndUpsert(note)
@@ -114,7 +114,7 @@ closed: false
 				FrontMatter: make(map[string]any),
 				Content:     tc.content,
 			}
-			sut := NewsNoteService()
+			sut := NewNoteService()
 			_, err := sut.ValidateAndUpsert(note)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErrMsg)

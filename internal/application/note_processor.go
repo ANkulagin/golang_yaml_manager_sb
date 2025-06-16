@@ -23,8 +23,11 @@ type NoteProcessor struct {
 	Logger      *logrus.Logger
 	NoteRepo    domain.NoteRepository
 	NoteService service.NoteService
+	TagService  service.TagService
 
-	sem chan struct{}
+	sem         chan struct{}
+	reportMutex sync.Mutex
+	reportLinks []string
 }
 
 func NewNoteProcessor(
@@ -34,6 +37,7 @@ func NewNoteProcessor(
 	logger *logrus.Logger,
 	noteRepo domain.NoteRepository,
 	noteService service.NoteService,
+	tagService service.TagService,
 ) *NoteProcessor {
 	return &NoteProcessor{
 		SrcDir:           srcDir,
@@ -44,14 +48,29 @@ func NewNoteProcessor(
 		Logger:           logger,
 		NoteRepo:         noteRepo,
 		NoteService:      noteService,
+		TagService:       tagService,
 		sem:              make(chan struct{}, concurrencyLimit),
+		reportLinks:      make([]string, 0),
 	}
 }
 
 func (p *NoteProcessor) Execute() error {
+	// Очищаем файл отчёта перед началом
+	if err := p.NoteRepo.ClearFile(p.ReportPath); err != nil {
+		p.Logger.Warnf("failed to clear report file: %v", err)
+	}
+
 	var wg sync.WaitGroup
 	_ = p.handleDirectory(p.SrcDir, &wg)
 	wg.Wait()
+
+	// Записываем все ссылки в отчёт
+	for _, link := range p.reportLinks {
+		if err := p.NoteRepo.AddLineToFile(p.ReportPath, link); err != nil {
+			p.Logger.Errorf("failed to add link to report: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -118,19 +137,28 @@ func (p *NoteProcessor) handleFile(filePath string) error {
 		return err
 	}
 
+	// Извлекаем теги из пути и обновляем
+	pathTags := p.TagService.ExtractTagsFromPath(filePath, p.SrcDir)
+	if len(pathTags) > 0 {
+		if err := p.NoteService.UpdateTags(note, pathTags); err != nil {
+			p.Logger.Errorf("failed to update tags for %s: %v", filePath, err)
+		}
+	}
+
 	shouldReport, err := p.NoteService.ValidateAndUpsert(note)
 	if err != nil {
 		return err
 	}
 
 	if shouldReport {
-		// Формируем ссылку вида [[filename]]
 		title := strings.TrimSuffix(filepath.Base(filePath), ".md")
 		link := "[[" + title + "]]"
-		if err := p.NoteRepo.AddLineToFile(p.ReportPath, link); err != nil {
-			return err
-		}
-		p.Logger.Infof("added link to report: %s", link)
+
+		p.reportMutex.Lock()
+		p.reportLinks = append(p.reportLinks, link)
+		p.reportMutex.Unlock()
+
+		p.Logger.Infof("will add link to report: %s", link)
 	}
 
 	return p.NoteRepo.UpdateFileContent(filePath, note.Content)
