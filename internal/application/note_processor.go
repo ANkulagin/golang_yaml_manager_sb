@@ -17,6 +17,7 @@ type NoteProcessor struct {
 	SrcDir           string
 	TemplatePath     string
 	ReportPath       string
+	ReportEnabled    bool
 	SkipPatterns     []string
 	ConcurrencyLimit int
 
@@ -32,6 +33,7 @@ type NoteProcessor struct {
 
 func NewNoteProcessor(
 	srcDir, templatePath, reportPath string,
+	reportEnabled bool,
 	skipPatterns []string,
 	concurrencyLimit int,
 	logger *logrus.Logger,
@@ -43,6 +45,7 @@ func NewNoteProcessor(
 		SrcDir:           srcDir,
 		TemplatePath:     templatePath,
 		ReportPath:       reportPath,
+		ReportEnabled:    reportEnabled,
 		SkipPatterns:     skipPatterns,
 		ConcurrencyLimit: concurrencyLimit,
 		Logger:           logger,
@@ -55,19 +58,21 @@ func NewNoteProcessor(
 }
 
 func (p *NoteProcessor) Execute() error {
-	// Очищаем файл отчёта перед началом
-	if err := p.NoteRepo.ClearFile(p.ReportPath); err != nil {
-		p.Logger.Warnf("failed to clear report file: %v", err)
+	if p.ReportEnabled {
+		if err := p.NoteRepo.ClearFile(p.ReportPath); err != nil {
+			p.Logger.Warnf("failed to clear report file: %v", err)
+		}
 	}
 
 	var wg sync.WaitGroup
 	_ = p.handleDirectory(p.SrcDir, &wg)
 	wg.Wait()
 
-	// Записываем все ссылки в отчёт
-	for _, link := range p.reportLinks {
-		if err := p.NoteRepo.AddLineToFile(p.ReportPath, link); err != nil {
-			p.Logger.Errorf("failed to add link to report: %v", err)
+	if p.ReportEnabled {
+		for _, link := range p.reportLinks {
+			if err := p.NoteRepo.AddLineToFile(p.ReportPath, link); err != nil {
+				p.Logger.Errorf("failed to add link to report: %v", err)
+			}
 		}
 	}
 
@@ -150,7 +155,7 @@ func (p *NoteProcessor) handleFile(filePath string) error {
 		return err
 	}
 
-	if shouldReport {
+	if shouldReport && p.ReportEnabled {
 		title := strings.TrimSuffix(filepath.Base(filePath), ".md")
 		link := "[[" + title + "]]"
 

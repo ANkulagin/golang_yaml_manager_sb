@@ -10,6 +10,7 @@ type Config struct {
 	SrcDir           string   `yaml:"src_dir"`
 	TemplateDir      string   `yaml:"template_dir"`
 	ReportFile       string   `yaml:"report_file"`
+	ReportEnabled    bool     `yaml:"report_enabled"`
 	LogLevel         string   `yaml:"log_level"`
 	ConcurrencyLimit int      `yaml:"concurrency_limit"`
 	SkipPatterns     []string `yaml:"skip_patterns"`

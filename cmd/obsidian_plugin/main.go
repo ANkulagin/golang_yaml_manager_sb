@@ -27,6 +27,7 @@ func main() {
 		cfg.SrcDir,
 		cfg.TemplateDir,
 		cfg.ReportFile,
+		cfg.ReportEnabled,
 		cfg.SkipPatterns,
 		cfg.ConcurrencyLimit,
 		logg,
