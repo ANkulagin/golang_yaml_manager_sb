@@ -1,6 +1,6 @@
-src_dir: "/Users/ankul/obsidian"
-template_dir: "/Users/ankul/obsidian/_template/ALL_FOR_PLUGIN.md"
-report_file: "/Users/ankul/obsidian/_report/close_reports.md"
+src_dir: "/Users/ankul/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian"
+template_dir: "/Users/ankul/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/_template/ALL_FOR_PLUGIN.md"
+report_file: "/Users/ankul/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/_report/close_reports.md"
 report_enabled: false
 log_level: "info"
 concurrency_limit: 12
